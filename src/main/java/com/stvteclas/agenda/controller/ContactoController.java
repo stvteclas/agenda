@@ -1,8 +1,9 @@
 package com.stvteclas.agenda.controller;
 
-import com.stvteclas.agenda.dto.ContactoRequestDTO;
 import com.stvteclas.agenda.model.ContactoEntity;
+import com.stvteclas.agenda.model.EmpresaEntity;
 import com.stvteclas.agenda.service.ContactoService;
+import com.stvteclas.agenda.service.EmpresaService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,9 +15,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
-import java.util.Optional;
-
 @Controller
 @AllArgsConstructor
 @RequestMapping
@@ -24,9 +22,11 @@ public class ContactoController {
 
     @Autowired
     ContactoService contactoService;
+    @Autowired
+    EmpresaService empresaService;
 
-    @GetMapping("/index")
-    String index(Pageable pageable, @RequestParam(required = false) String busqueda, Model model) {
+    @GetMapping("/contacto")
+    String contacto(Pageable pageable, @RequestParam(required = false) String busqueda, Model model) {
         Page<ContactoEntity> contactoPage ;
         if (busqueda !=null && busqueda.trim().length()> 0){
             contactoPage = contactoService.findByNombreContaining(busqueda, pageable);
@@ -35,30 +35,40 @@ public class ContactoController {
         }
 
         model.addAttribute("contactoPage", contactoPage);
-        return "index";
+        return "contacto";
     }
 
     @GetMapping("/nuevo")
-    String nuevo(Model model) {
+    String nuevo(Pageable pageable, Model model) {
+        Page<EmpresaEntity> empresaPage ;
+        empresaPage = empresaService.findAll(pageable);
         model.addAttribute("contacto", new ContactoEntity());
+        model.addAttribute("empresaPage", empresaPage);
         return "nuevo";
     }
 
     @PostMapping("/nuevo")
-    String crear(@Validated ContactoEntity contacto, BindingResult bindingResult, RedirectAttributes ra, Model model) {
+    String crear(Pageable pageable, @Validated ContactoEntity contacto, BindingResult bindingResult, RedirectAttributes ra, Model model) {
+        Page<EmpresaEntity> empresaPage ;
+        empresaPage = empresaService.findAll(pageable);
         if (bindingResult.hasErrors()) {
             model.addAttribute("contacto", contacto);
+            model.addAttribute("empresaPage", empresaPage);
             return "nuevo";
         }
         contactoService.save(contacto);
         ra.addFlashAttribute("msgExito", "El contacto se ha creado correctamente");
-        return "redirect:/index";
+        return "redirect:/contacto";
     }
 
+
     @GetMapping("/{id}/editar")
-    String editar(@PathVariable Long id, Model model) {
+    String editar(Pageable pageable, @PathVariable Long id, Model model) {
+        Page<EmpresaEntity> empresaPage ;
+        empresaPage = empresaService.findAll(pageable);
         ContactoEntity contacto = contactoService.getById(id);
         model.addAttribute("contacto", contacto);
+        model.addAttribute("empresaPage", empresaPage);
         return "editar";
     }
 
@@ -82,7 +92,7 @@ public class ContactoController {
         contactoFromDB.setFechaNacimiento(contacto.getFechaNacimiento());
         contactoService.update(contactoFromDB);
         ra.addFlashAttribute("msgExito", "El contacto se ha actualizado correctamente");
-        return "redirect:/index";
+        return "redirect:/contacto";
     }
 
 
@@ -95,7 +105,7 @@ public class ContactoController {
         ContactoEntity contactoFromDB = contactoService.getById(id);
         contactoService.delete(contactoFromDB);
         ra.addFlashAttribute("msgExito", "El contacto se ha eliminado correctamente");
-        return "redirect:/index";
+        return "redirect:/contacto";
     }
 
 
